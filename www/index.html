@@ -98,46 +98,82 @@
     .json-viewer {
       font-family: 'Consolas', 'Monaco', monospace;
       font-size: 13px;
-      line-height: 1.5;
+      line-height: 1.6;
     }
-    .json-key {
+    .json-matrix-container {
+      margin: 8px 0;
+    }
+    .json-matrix-header {
+      padding: 8px 12px;
+      background: #2d2d2d;
+      border-radius: 4px;
       color: #9cdcfe;
+      font-size: 12px;
     }
-    .json-string {
-      color: #ce9178;
-    }
-    .json-number {
-      color: #b5cea8;
-    }
-    .json-boolean {
+    .json-toggle-btn {
       color: #569cd6;
-    }
-    .json-null {
-      color: #569cd6;
-    }
-    .json-toggle {
       cursor: pointer;
-      user-select: none;
-      margin-right: 4px;
+      margin-left: 8px;
+    }
+    .json-toggle-btn:hover {
+      text-decoration: underline;
+    }
+    .json-matrix-content {
+      margin-top: 8px;
+      overflow-x: auto;
+    }
+    .json-matrix-table {
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .json-matrix-table th,
+    .json-matrix-table td {
+      padding: 4px 8px;
+      border: 1px solid #444;
+      text-align: right;
+    }
+    .json-matrix-table th {
+      background: #252526;
       color: #888;
     }
-    .json-toggle::before {
-      content: '▶';
+    .json-matrix-table .row-index {
+      background: #252526;
+      color: #888;
+      font-weight: bold;
+    }
+    .json-vector-container {
       display: inline-block;
-      font-size: 10px;
-      transition: transform 0.2s;
+      margin: 4px 0;
     }
-    .json-toggle.collapsed::before {
-      transform: rotate(0deg);
+    .json-vector-content {
+      display: inline;
     }
-    .json-toggle.expanded::before {
-      transform: rotate(90deg);
+    .json-vector-summary {
+      color: #6a9955;
+      font-style: italic;
     }
-    .json-item {
+    .json-bracket {
+      color: #ffd700;
+    }
+    .json-array-content,
+    .json-object-content {
+      display: block;
       margin-left: 20px;
     }
-    .json-item:first-child {
-      margin-left: 0;
+    .json-item {
+      margin: 2px 0;
+    }
+    .json-more {
+      color: #6a9955;
+      font-style: italic;
+    }
+    .json-expand {
+      color: #569cd6;
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .json-expand:hover {
+      text-decoration: underline;
     }
     .chart-controls {
       display: flex;
@@ -167,7 +203,7 @@
       height: calc(100% - 50px);
       position: relative;
     }
-    canvas {
+    #plotly-chart {
       width: 100%;
       height: 100%;
     }
@@ -192,6 +228,7 @@
             <input type="file" id="file-input" accept=".jsonl,.json">
           </label>
           <span class="file-path" id="file-path">No file selected</span>
+          <button class="btn" id="toggle-refresh">Auto Refresh: OFF</button>
         </div>
         <div class="row-selector">
           <span>Row:</span>
@@ -218,7 +255,7 @@
       </div>
       <div class="panel-content">
         <div class="chart-container">
-          <canvas id="chart-canvas"></canvas>
+          <div id="plotly-chart"></div>
         </div>
       </div>
     </div>
