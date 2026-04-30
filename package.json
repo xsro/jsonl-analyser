@@ -5,36 +5,21 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "build": "vue-tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/postcss": "^4.2.4",
-    "@tanstack/react-table": "^8.21.3",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "recharts": "^3.8.1",
-    "tdesign-icons-react": "0.6.4",
-    "tdesign-react": "1.16.9"
+    "vue": "^3.5.13",
+    "echarts": "^5.5.1",
+    "vue-echarts": "^7.0.3"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "autoprefixer": "^10.5.0",
-    "eslint": "^10.2.1",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.5.0",
-    "less": "4.6.4",
-    "postcss": "^8.5.12",
-    "tailwind-merge": "^3.5.0",
-    "tailwindcss": "4.2.4",
-    "tailwindcss-animate": "^1.0.7",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.1",
-    "vite": "^8.0.10"
+    "@vitejs/plugin-vue": "^5.2.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.5",
+    "vue-tsc": "^2.2.0"
   }
 }
