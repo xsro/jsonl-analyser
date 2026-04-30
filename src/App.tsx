@@ -1,12 +1,43 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Layout, Space, Typography, Card, InputNumber, MessagePlugin, Tabs } from 'tdesign-react'
 import { UploadIcon, FileIcon } from 'tdesign-icons-react'
 import JsonViewer from './components/JsonViewer'
 import ChartPanel from './components/ChartPanel'
 import FileList from './components/FileList'
+import "tdesign-react/es/_util/react-19-adapter";
 
 const { Header, Content, Aside } = Layout
 const { Title, Text } = Typography
+
+// 递归提取所有嵌套路径
+const extractPaths = (obj: unknown, prefix: string = ''): string[] => {
+  if (obj === null || obj === undefined) return []
+  
+  const paths: string[] = []
+  
+  if (Array.isArray(obj)) {
+    // 如果是数字数组，添加当前路径
+    if (obj.length > 0 && obj.every(item => typeof item === 'number')) {
+      if (prefix) paths.push(prefix)
+    } else {
+      // 遍历数组元素，添加索引路径
+      obj.forEach((item, index) => {
+        const newPrefix = prefix ? `${prefix}[${index}]` : `[${index}]`
+        paths.push(...extractPaths(item, newPrefix))
+      })
+    }
+  } else if (typeof obj === 'object') {
+    Object.entries(obj as Record<string, unknown>).forEach(([key, value]) => {
+      const newPrefix = prefix ? `${prefix}.${key}` : key
+      paths.push(...extractPaths(value, newPrefix))
+    })
+  } else {
+    // 基本类型
+    if (prefix) paths.push(prefix)
+  }
+  
+  return [...new Set(paths)]
+}
 
 export interface JsonLine {
   lineNumber: number
@@ -17,7 +48,6 @@ export interface JsonLine {
 export interface ChartConfig {
   xKey: string
   yKey: string
-  chartType: 'line' | 'bar' | 'scatter' | 'area'
 }
 
 function App() {
@@ -26,8 +56,7 @@ function App() {
   const [fileName, setFileName] = useState<string>('')
   const [chartConfig, setChartConfig] = useState<ChartConfig>({
     xKey: '',
-    yKey: '',
-    chartType: 'line'
+    yKey: ''
   })
 
   const parseJsonl = useCallback((content: string): JsonLine[] => {
@@ -71,9 +100,15 @@ function App() {
     reader.readAsText(file)
   }, [parseJsonl])
 
-  const allKeys = jsonData.length > 0 
-    ? [...new Set(jsonData.flatMap(item => Object.keys(item.data)))]
-    : []
+  const allKeys = useMemo(() => {
+    if (jsonData.length === 0) return []
+    const paths = new Set<string>()
+    // 从前10行提取路径，避免性能问题
+    jsonData.slice(0, 10).forEach(item => {
+      extractPaths(item.data).forEach(p => paths.add(p))
+    })
+    return [...paths].sort()
+  }, [jsonData])
 
   return (
     <Layout className="min-h-screen bg-gray-50">
@@ -153,43 +188,34 @@ function App() {
                   <Space direction="vertical" size="medium" className="w-full">
                     <div className="flex items-center gap-4 flex-wrap">
                       <span className="text-gray-600">X轴字段:</span>
-                      <div style={{ width: 180 }}>
-                        <select
-                          className="w-full h-10 px-3 border border-gray-300 rounded"
+                      <div style={{ width: 220 }}>
+                        <input
+                          list="xKeyOptions"
+                          className="w-full h-10 px-3 border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
+                          placeholder="输入或选择字段"
                           value={chartConfig.xKey}
                           onChange={(e) => setChartConfig(prev => ({ ...prev, xKey: e.target.value }))}
-                        >
-                          <option value="">选择 X 轴字段</option>
+                        />
+                        <datalist id="xKeyOptions">
                           {allKeys.map(k => (
-                            <option key={k} value={k}>{k}</option>
+                            <option key={k} value={k} />
                           ))}
-                        </select>
+                        </datalist>
                       </div>
                       <span className="text-gray-600">Y轴字段:</span>
-                      <div style={{ width: 180 }}>
-                        <select
-                          className="w-full h-10 px-3 border border-gray-300 rounded"
+                      <div style={{ width: 220 }}>
+                        <input
+                          list="yKeyOptions"
+                          className="w-full h-10 px-3 border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
+                          placeholder="输入或选择字段"
                           value={chartConfig.yKey}
                           onChange={(e) => setChartConfig(prev => ({ ...prev, yKey: e.target.value }))}
-                        >
-                          <option value="">选择 Y 轴字段</option>
+                        />
+                        <datalist id="yKeyOptions">
                           {allKeys.map(k => (
-                            <option key={k} value={k}>{k}</option>
+                            <option key={k} value={k} />
                           ))}
-                        </select>
-                      </div>
-                      <span className="text-gray-600">图表类型:</span>
-                      <div style={{ width: 140 }}>
-                        <select
-                          className="w-full h-10 px-3 border border-gray-300 rounded"
-                          value={chartConfig.chartType}
-                          onChange={(e) => setChartConfig(prev => ({ ...prev, chartType: e.target.value as ChartConfig['chartType'] }))}
-                        >
-                          <option value="line">折线图</option>
-                          <option value="bar">柱状图</option>
-                          <option value="scatter">散点图</option>
-                          <option value="area">面积图</option>
-                        </select>
+                        </datalist>
                       </div>
                     </div>
                     <ChartPanel

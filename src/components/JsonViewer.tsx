@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Card, Tag, Space, Typography } from 'tdesign-react'
+import { ChevronRightIcon, ChevronDownIcon } from 'tdesign-icons-react'
 
 const { Text } = Typography
 
@@ -6,101 +8,153 @@ interface JsonViewerProps {
   data: Record<string, unknown>
 }
 
-interface TypeInfo {
-  key: string
-  value: unknown
-  type: string
-  typeColor: string
+// 检查是否是全是 number 的数组
+const isNumberArray = (arr: unknown[]): boolean => {
+  return arr.length > 0 && arr.every(item => typeof item === 'number')
 }
 
-const getTypeInfo = (key: string, value: unknown): TypeInfo => {
-  let type = ''
-  if (Array.isArray(value)) {
-    type = 'array'
-  } else if (value === null) {
-    type = 'null'
-  } else {
-    type = typeof value
-  }
+// 检查是否是全是 number 数组的矩阵
+const isNumberMatrix = (arr: unknown[]): boolean => {
+  if (arr.length === 0) return false
+  const firstItem = arr[0]
+  if (!Array.isArray(firstItem)) return false
+  const colCount = (firstItem as unknown[]).length
+  return arr.every(item => 
+    Array.isArray(item) && 
+    (item as unknown[]).length === colCount &&
+    isNumberArray(item as unknown[])
+  )
+}
+
+interface TreeNodeProps {
+  keyName: string
+  value: unknown
+  depth: number
+  isLast?: boolean
+}
+
+const TreeNode: React.FC<TreeNodeProps> = ({ keyName, value, depth, isLast = false }) => {
+  const [expanded, setExpanded] = useState(depth === 0 ? false : true)
+  const isArray = Array.isArray(value)
+  const isObject = value !== null && typeof value === 'object' && !isArray
+  const isMatrix = isArray && (isNumberArray(value as unknown[]) || isNumberMatrix(value as unknown[]))
   
-  let typeColor = '#909FA6'
-  switch (type) {
-    case 'string':
-      typeColor = '#165DFF'
-      break
-    case 'number':
-      typeColor = '#FF7D00'
-      break
-    case 'boolean':
-      typeColor = '#14A9A9'
-      break
-    case 'object':
-      typeColor = '#722ED1'
-      break
-    case 'array':
-      typeColor = '#D3190C'
-      break
-    case 'null':
-      typeColor = '#909FA6'
-      break
+  const formatValue = (v: unknown): string => {
+    if (v === null) return 'null'
+    if (v === undefined) return 'undefined'
+    if (typeof v === 'string') return `"${v}"`
+    return String(v)
   }
 
-  return { key, value, type, typeColor }
+  const getValueDisplay = () => {
+    if (isArray) {
+      if (isNumberMatrix(value as unknown[])) {
+        const rows = (value as unknown[]).length
+        const cols = ((value as unknown[])[0] as unknown[]).length
+        return <span className="text-red-500 font-medium">number[][] [{rows}×{cols}]</span>
+      }
+      if (isNumberArray(value as unknown[])) {
+        return <span className="text-orange-500 font-medium">number[] ({value.length})</span>
+      }
+      if ((value as unknown[]).length === 0) {
+        return <span className="text-gray-400">[]</span>
+      }
+      return null
+    }
+    if (isObject) {
+      const keys = Object.keys(value as object)
+      if (keys.length === 0) return <span className="text-purple-400">{'{}'}</span>
+      return null
+    }
+    return <span className={typeof value === 'string' ? 'text-green-600' : typeof value === 'number' ? 'text-blue-600' : 'text-gray-600'}>{formatValue(value)}</span>
+  }
+
+  const valueDisplay = getValueDisplay()
+  const canExpand = (isArray && (value as unknown[]).length > 0) || (isObject && Object.keys(value as object).length > 0)
+
+  return (
+    <div>
+      <div 
+        className={`flex items-start gap-1 py-0.5 hover:bg-gray-100 rounded px-1 ${depth > 0 ? 'ml-4' : ''}`}
+        onClick={() => canExpand && setExpanded(!expanded)}
+        style={{ cursor: canExpand ? 'pointer' : 'default' }}
+      >
+        {canExpand ? (
+          expanded ? (
+            <ChevronDownIcon className="text-gray-400 w-3 h-3 mt-1 flex-shrink-0" />
+          ) : (
+            <ChevronRightIcon className="text-gray-400 w-3 h-3 mt-1 flex-shrink-0" />
+          )
+        ) : (
+          <span className="w-3 h-3 mt-1 flex-shrink-0" />
+        )}
+        
+        <span className="text-blue-600 text-sm">{keyName}</span>
+        <span className="text-gray-400 text-sm">:</span>
+        
+        {valueDisplay ? (
+          <span className="text-sm">{valueDisplay}</span>
+        ) : (
+          <span className="text-gray-400 text-sm">
+            {isArray ? `[${(value as unknown[]).length}]` : `{${Object.keys(value as object).length}}`}
+          </span>
+        )}
+      </div>
+      
+      {expanded && isObject && (
+        <div className="border-l border-gray-200 ml-2">
+          {Object.entries(value as object).map(([k, v], idx) => (
+            <TreeNode 
+              key={k} 
+              keyName={k} 
+              value={v} 
+              depth={depth + 1}
+              isLast={idx === Object.keys(value as object).length - 1}
+            />
+          ))}
+        </div>
+      )}
+      
+      {expanded && isArray && (
+        <div className="border-l border-gray-200 ml-2">
+          {(value as unknown[]).map((item, idx) => (
+            <TreeNode 
+              key={idx} 
+              keyName={`[${idx}]`} 
+              value={item} 
+              depth={depth + 1}
+              isLast={idx === (value as unknown[]).length - 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 const JsonViewer: React.FC<JsonViewerProps> = ({ data }) => {
   const entries = Object.entries(data)
-  const typeInfoList = entries.map(([key, value]) => getTypeInfo(key, value))
 
-  const formatValue = (value: unknown): string => {
-    if (value === null) return 'null'
-    if (value === undefined) return 'undefined'
-    if (typeof value === 'string') return `"${value}"`
-    if (typeof value === 'object') return JSON.stringify(value)
-    return String(value)
+  const getTypeColor = (value: unknown): string => {
+    if (Array.isArray(value)) return '#D3190C'
+    if (value === null) return '#909FA6'
+    switch (typeof value) {
+      case 'string': return '#165DFF'
+      case 'number': return '#FF7D00'
+      case 'boolean': return '#14A9A9'
+      case 'object': return '#722ED1'
+      default: return '#909FA6'
+    }
   }
 
-  const renderNestedValue = (value: unknown, depth: number = 0): React.ReactNode => {
-    if (value === null) {
-      return <span className="text-gray-500 italic">null</span>
-    }
-    if (value === undefined) {
-      return <span className="text-gray-400 italic">undefined</span>
-    }
+  const getTypeLabel = (value: unknown): string => {
     if (Array.isArray(value)) {
-      if (value.length === 0) return <span className="text-orange-600">[]</span>
-      return (
-        <div className="pl-4 border-l-2 border-gray-200">
-          {value.slice(0, 5).map((item, idx) => (
-            <div key={idx} className="flex items-start gap-2 py-0.5">
-              <span className="text-gray-400">{idx}:</span>
-              {renderNestedValue(item, depth + 1)}
-            </div>
-          ))}
-          {value.length > 5 && (
-            <div className="text-gray-400 text-sm pl-4">... 共 {value.length} 项</div>
-          )}
-        </div>
-      )
+      if (isNumberMatrix(value)) return 'matrix'
+      if (isNumberArray(value)) return 'vector'
+      return 'array'
     }
-    if (typeof value === 'object') {
-      const keys = Object.keys(value as object)
-      if (keys.length === 0) return <span className="text-purple-600">{'{}'}</span>
-      return (
-        <div className="pl-4 border-l-2 border-purple-200">
-          {keys.slice(0, 5).map((k) => (
-            <div key={k} className="flex items-start gap-2 py-0.5">
-              <span className="text-purple-600">"{k}":</span>
-              {renderNestedValue((value as Record<string, unknown>)[k], depth + 1)}
-            </div>
-          ))}
-          {keys.length > 5 && (
-            <div className="text-gray-400 text-sm pl-4">... 共 {keys.length} 个属性</div>
-          )}
-        </div>
-      )
-    }
-    return <span>{formatValue(value)}</span>
+    if (value === null) return 'null'
+    return typeof value
   }
 
   return (
@@ -108,30 +162,24 @@ const JsonViewer: React.FC<JsonViewerProps> = ({ data }) => {
       <Space direction="vertical" size="small" className="w-full">
         <Text strong>数据结构概览</Text>
         <div className="flex flex-wrap gap-2">
-          {typeInfoList.map((info) => (
+          {entries.map(([key, value]) => (
             <Tag
-              key={info.key}
+              key={key}
               style={{ 
-                backgroundColor: `${info.typeColor}15`,
-                color: info.typeColor,
-                borderColor: info.typeColor
+                backgroundColor: `${getTypeColor(value)}15`,
+                color: getTypeColor(value),
+                borderColor: getTypeColor(value)
               }}
             >
-              {info.key}: {info.type}
+              {key}: {getTypeLabel(value)}
             </Tag>
           ))}
         </div>
         
         <Text strong className="mt-4">详细数据</Text>
-        <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm overflow-auto max-h-96">
+        <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm overflow-auto max-h-[600px]">
           {entries.map(([key, value]) => (
-            <div key={key} className="flex items-start gap-2 py-1 hover:bg-gray-100 px-2 rounded">
-              <span className="text-blue-600 min-w-[100px]">"{key}"</span>
-              <span className="text-gray-400">:</span>
-              <span className="flex-1 break-all">
-                {renderNestedValue(value)}
-              </span>
-            </div>
+            <TreeNode key={key} keyName={key} value={value} depth={0} />
           ))}
         </div>
       </Space>
