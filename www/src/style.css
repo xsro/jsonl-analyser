@@ -75,7 +75,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
+  margin-left: 10px;
 }
 .row-selector input {
   width: 60px;
