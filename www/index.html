@@ -34,13 +34,13 @@
     </div>
     <div class="panel" id="chart-panel">
       <div class="panel-header">
-        <h2>Line Chart</h2>
+        <h2>Charts</h2>
         <div class="chart-controls">
-          <label>X Key:</label>
-          <input type="text" class="x-key" id="x-key" value="t" placeholder="t">
-          <label>Y Keys:</label>
-          <input type="text" class="y-key" id="y-keys" value="state.debug.p1[1]" placeholder="state.debug.p1[1]">
-          <button class="btn" id="update-chart">Update</button>
+          <select id="chart-type">
+            <option value="line">Line Chart</option>
+            <option value="scatter">Scatter Plot</option>
+          </select>
+          <button class="btn" id="open-key-config">Configure Keys</button>
         </div>
       </div>
       <div class="panel-content">
@@ -50,6 +50,36 @@
       </div>
     </div>
   </div>
+
+  <!-- Key Configuration Modal -->
+  <div id="key-config-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Configure Chart Keys</h3>
+        <button class="modal-close" id="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">First row is X Key, remaining rows are Y Keys</p>
+        <table id="keys-table">
+          <thead>
+            <tr>
+              <th>X Key</th>
+              <th>Y Key</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="keys-tbody">
+          </tbody>
+        </table>
+        <button class="btn btn-small" id="add-key-row">+ Add Row</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="cancel-keys">Cancel</button>
+        <button class="btn btn-primary" id="apply-keys">Apply</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

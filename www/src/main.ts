@@ -1,14 +1,10 @@
 // filepath: src/main.ts
-import Plotly from 'plotly.js-dist-min';
 import { JsonViewer } from './jsonViewer';
+import { ChartData, createLineChart } from './lineChart';
+import { createScatterChart } from './scatterChart';
 
 interface JsonData {
   [key: string]: unknown;
-}
-
-interface ChartData {
-  x: number[];
-  y: { [key: string]: number[] };
 }
 
 // File System Access API 类型声明
@@ -39,19 +35,30 @@ declare global {
   }
 }
 
+interface KeyRow {
+  xKey: string;
+  yKey: string;
+}
+
 class JsonlAnalyser {
   private data: JsonData[] = [];
   private currentRow: number = 0;
   private updateInterval: number | null = null;
-  private chartData: ChartData = { x: [], y: {} };
-  private xKey: string = 't';
-  private yKeys: string[] = ['state.debug.p1[1]'];
+  private chartData: { scatter: ChartData, line: ChartData } = { scatter: {}, line: {} };
+  private chartDataKeys = {
+    scatter: [
+      { xKey: 'state.debug.p1[0]', yKey: 'state.debug.p1[1]' }
+    ],
+    line: [
+      { xKey: 't', yKey: 'state.debug.p1[0]' },
+      { xKey: 't', yKey: 'state.debug.p1[1]' },
+      { xKey: 't', yKey: 'state.debug.p1[2]' },
+    ]
+  };
+  private chartType: string = 'line';
 
   private openFileBtn: HTMLButtonElement;
   private filePathEl: HTMLElement;
-  private xKeyInput: HTMLInputElement;
-  private yKeysInput: HTMLInputElement;
-  private updateChartBtn: HTMLButtonElement;
   private toggleRefreshBtn: HTMLButtonElement;
   private chartDiv: HTMLElement;
   private rowInput: HTMLInputElement;
@@ -63,13 +70,15 @@ class JsonlAnalyser {
   private autoRefresh: boolean = false;
   private fileHandle: FileSystemFileHandle | null = null;
   private jsonViewer: JsonViewer;
+  private chartTypeSelect: HTMLSelectElement;
+  private openKeyConfigBtn: HTMLButtonElement;
+  private modal: HTMLElement;
+  private keysTbody: HTMLTableSectionElement;
+  private pendingKeys: KeyRow[] = [];
 
   constructor() {
     this.openFileBtn = document.getElementById('open-file') as HTMLButtonElement;
     this.filePathEl = document.getElementById('file-path') as HTMLElement;
-    this.xKeyInput = document.getElementById('x-key') as HTMLInputElement;
-    this.yKeysInput = document.getElementById('y-keys') as HTMLInputElement;
-    this.updateChartBtn = document.getElementById('update-chart') as HTMLButtonElement;
     this.toggleRefreshBtn = document.getElementById('toggle-refresh') as HTMLButtonElement;
     this.chartDiv = document.getElementById('plotly-chart') as HTMLElement;
     this.rowInput = document.getElementById('row-input') as HTMLInputElement;
@@ -78,6 +87,10 @@ class JsonlAnalyser {
     this.lastRowBtn = document.getElementById('last-row') as HTMLButtonElement;
     this.prevRowBtn = document.getElementById('prev-row') as HTMLButtonElement;
     this.nextRowBtn = document.getElementById('next-row') as HTMLButtonElement;
+    this.chartTypeSelect = document.getElementById('chart-type') as HTMLSelectElement;
+    this.openKeyConfigBtn = document.getElementById('open-key-config') as HTMLButtonElement;
+    this.modal = document.getElementById('key-config-modal') as HTMLElement;
+    this.keysTbody = document.getElementById('keys-tbody') as HTMLTableSectionElement;
 
     const jsonViewerEl = document.getElementById('json-viewer') as HTMLElement;
     this.jsonViewer = new JsonViewer({
@@ -92,8 +105,11 @@ class JsonlAnalyser {
 
   private init(): void {
     this.openFileBtn.addEventListener('click', this.handleOpenFile.bind(this));
-    this.updateChartBtn.addEventListener('click', this.handleUpdateChart.bind(this));
     this.toggleRefreshBtn.addEventListener('click', this.handleToggleRefresh.bind(this));
+    this.chartTypeSelect.addEventListener('change', () => {
+      this.chartType = this.chartTypeSelect.value;
+      this.drawChart();
+    });
     this.firstRowBtn.addEventListener('click', () => this.goToRow(0));
     this.lastRowBtn.addEventListener('click', () => this.goToRow(this.data.length - 1));
     this.prevRowBtn.addEventListener('click', () => this.goToRow(this.currentRow - 1));
@@ -102,10 +118,90 @@ class JsonlAnalyser {
       const target = e.target as HTMLInputElement;
       this.goToRow(parseInt(target.value) || 0);
     });
-    window.addEventListener('resize', this.drawChart.bind(this));
+    window.addEventListener('resize', () => this.drawChart());
 
-    this.xKeyInput.value = this.xKey;
-    this.yKeysInput.value = this.yKeys.join(', ');
+    this.initKeyConfigModal();
+  }
+
+  private initKeyConfigModal(): void {
+    const closeBtn = document.getElementById('close-modal') as HTMLButtonElement;
+    const cancelBtn = document.getElementById('cancel-keys') as HTMLButtonElement;
+    const applyBtn = document.getElementById('apply-keys') as HTMLButtonElement;
+    const addRowBtn = document.getElementById('add-key-row') as HTMLButtonElement;
+
+    this.openKeyConfigBtn.addEventListener('click', () => {
+      if (this.chartType === 'scatter') {
+        this.pendingKeys = this.chartDataKeys.scatter;
+      } else {
+        this.pendingKeys = this.chartDataKeys.line;
+      }
+      this.renderKeyTable();
+      this.modal.classList.add('active');
+    });
+
+    closeBtn.addEventListener('click', () => this.closeModal());
+    cancelBtn.addEventListener('click', () => this.closeModal());
+    applyBtn.addEventListener('click', () => this.applyKeys());
+    addRowBtn.addEventListener('click', () => {
+      this.pendingKeys.push({ xKey: '', yKey: '' });
+      this.renderKeyTable();
+    });
+
+    this.modal.addEventListener('click', (e) => {
+      if (e.target === this.modal) this.closeModal();
+    });
+  }
+
+  private closeModal(): void {
+    this.modal.classList.remove('active');
+  }
+
+  private renderKeyTable(): void {
+    this.keysTbody.innerHTML = '';
+    this.pendingKeys.forEach((row, index) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" value="${row.xKey}" data-index="${index}" data-field="xKey" placeholder="X Key"></td>
+        <td><input type="text" value="${row.yKey}" data-index="${index}" data-field="yKey" placeholder="Y Key"></td>
+        <td><button class="delete-btn" data-index="${index}">&times;</button></td>
+      `;
+      this.keysTbody.appendChild(tr);
+    });
+
+    this.keysTbody.querySelectorAll('input').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        const index = parseInt(target.dataset.index!);
+        const field = target.dataset.field as 'xKey' | 'yKey';
+        this.pendingKeys[index][field] = target.value;
+      });
+    });
+
+    this.keysTbody.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.target as HTMLButtonElement;
+        const index = parseInt(target.dataset.index!);
+        if (this.pendingKeys.length > 1) {
+          this.pendingKeys.splice(index, 1);
+          this.renderKeyTable();
+        }
+      });
+    });
+  }
+
+  private applyKeys(): void {
+    const firstRow = this.pendingKeys[0];
+    console.log(this.pendingKeys);
+    if (this.chartType === 'scatter') {
+      this.chartDataKeys.scatter = this.pendingKeys;
+    } else {
+      this.chartDataKeys.line = this.pendingKeys;
+    }
+
+
+    this.closeModal();
+    this.updateChartData();
+    this.drawChart();
   }
 
   private goToRow(row: number): void {
@@ -134,7 +230,6 @@ class JsonlAnalyser {
         await this.readFileFromHandle();
       }
     } catch (err) {
-      // 用户取消选择时不报错
       if ((err as Error).name !== 'AbortError') {
         console.error('Error opening file:', err);
       }
@@ -154,7 +249,6 @@ class JsonlAnalyser {
         .map(line => JSON.parse(line));
 
       if (this.data.length > 0) {
-        // 保留有效行号，超出范围则设为0
         if (this.currentRow >= this.data.length) {
           this.currentRow = 0;
         }
@@ -195,17 +289,6 @@ class JsonlAnalyser {
     }, 10000);
   }
 
-  private handleUpdateChart(): void {
-    this.xKey = this.xKeyInput.value.trim() || 't';
-    this.yKeys = this.yKeysInput.value
-      .split(',')
-      .map(k => k.trim())
-      .filter(k => k);
-
-    this.updateChartData();
-    this.drawChart();
-  }
-
   private getNestedValue(obj: unknown, path: string): unknown {
     const keys = path.replace(/\[(\d+)\]/g, '.$1').split('.');
     let result: unknown = obj;
@@ -222,85 +305,41 @@ class JsonlAnalyser {
   }
 
   private updateChartData(): void {
-    this.chartData = { x: [], y: {} };
+    for (const plotType of ["scatter", "line"]) {
+      let chartData: ChartData = this.chartData[plotType as "scatter" | "line"] ;
+      const keys = this.chartDataKeys[plotType as "scatter" | "line"];
 
-    for (const yKey of this.yKeys) {
-      this.chartData.y[yKey] = [];
-    }
-
-    for (const row of this.data) {
-      const xVal = this.getNestedValue(row, this.xKey);
-      if (typeof xVal === 'number') {
-        this.chartData.x.push(xVal);
-
-        for (const yKey of this.yKeys) {
-          const yVal = this.getNestedValue(row, yKey);
-          this.chartData.y[yKey].push(typeof yVal === 'number' ? yVal : NaN);
+      for (const rowIdx of this.data.keys()) {
+        const row=this.data[rowIdx];
+        for (const key of keys) {
+          const xVal = this.getNestedValue(row, key.xKey);
+          const yVal = this.getNestedValue(row, key.yKey);
+          const traceKey = key.xKey +"|"+ key.yKey;
+          if (!(traceKey in chartData)||rowIdx===0) {
+            chartData[traceKey] = { x: [], y: [] };
+          }
+          chartData[traceKey].x.push(typeof xVal === 'number' ? xVal : NaN);
+          chartData[traceKey].y.push(typeof yVal === 'number' ? yVal : NaN);
         }
       }
     }
   }
 
   private drawChart(): void {
-    console.log(this)
-    if (this.chartData.x.length === 0) {
+    if (Object.keys(this.chartData).length === 0) {
       this.chartDiv.innerHTML = '<div class="loading">No data to display</div>';
       return;
     }
 
-    const xMin = Math.min(...this.chartData.x);
-    const xMax = Math.max(...this.chartData.x);
-    let yMin = Infinity;
-    let yMax = -Infinity;
-
-    for (const yKey of this.yKeys) {
-      const values = this.chartData.y[yKey].filter(v => !isNaN(v));
-      if (values.length > 0) {
-        yMin = Math.min(yMin, ...values);
-        yMax = Math.max(yMax, ...values);
-      }
+    if (this.chartType === 'scatter') {
+      const yKey = 'y'; const xKey = 'x';
+      const renderScatter = createScatterChart();
+      renderScatter(this.chartDiv, this.chartData.scatter, xKey, yKey);
+    } else {
+      const yKey = 'y'; const xKey = 't';
+      const lineChartRenderer = createLineChart(xKey);
+      lineChartRenderer.render(this.chartDiv, this.chartData.line);
     }
-
-    if (yMin === Infinity) yMin = 0;
-    if (yMax === -Infinity) yMax = 1;
-    if (yMin === yMax) {
-      yMin -= 1;
-      yMax += 1;
-    }
-
-    const colors = ['#4ec9b0', '#ce9178', '#569cd6', '#dcdcaa', '#c586c0'];
-    const traces = this.yKeys.map((yKey, keyIndex) => ({
-      x: this.chartData.x,
-      y: this.chartData.y[yKey],
-      type: 'scatter',
-      mode: 'lines+markers',
-      name: yKey,
-      line: { color: colors[keyIndex % colors.length], width: 2 },
-      marker: { size: 4 }
-    }));
-
-    const layout = {
-      paper_bgcolor: '#1e1e1e',
-      plot_bgcolor: '#1e1e1e',
-      font: { color: '#d4d4d4' },
-      xaxis: {
-        title: this.xKey,
-        gridcolor: '#333',
-        zerolinecolor: '#555'
-      },
-      yaxis: {
-        title: 'Value',
-        gridcolor: '#333',
-        zerolinecolor: '#555',
-        range: [yMin, yMax]
-      },
-      margin: { t: 20, r: 20, b: 40, l: 60 },
-      showlegend: true,
-      legend: { x: 1, y: 1, bgcolor: 'rgba(0,0,0,0.5)' }
-    };
-
-    const config = { responsive: true, displayModeBar: false };
-    Plotly.newPlot(this.chartDiv, traces, layout, config);
   }
 }
 
