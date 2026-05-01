@@ -47,7 +47,9 @@ class JsonlAnalyser {
   private chartData: { scatter: ChartData, line: ChartData } = { scatter: {}, line: {} };
   private chartDataKeys = {
     scatter: [
-      { xKey: 'state.debug.p1[0]', yKey: 'state.debug.p1[1]' }
+      { xKey: 'state.agents[0].p[0]', yKey: 'state.agents[0].p[1]' },
+      { xKey: 'state.agents[1].p[0]', yKey: 'state.agents[1].p[1]' },
+      { xKey: 'state.agents[2].p[0]', yKey: 'state.agents[2].p[1]' }
     ],
     line: [
       { xKey: 't', yKey: 'state.debug.p1[0]' },
@@ -306,7 +308,7 @@ class JsonlAnalyser {
 
   private updateChartData(): void {
     for (const plotType of ["scatter", "line"]) {
-      let chartData: ChartData = this.chartData[plotType as "scatter" | "line"] ;
+      let chartData: ChartData = {};
       const keys = this.chartDataKeys[plotType as "scatter" | "line"];
 
       for (const rowIdx of this.data.keys()) {
@@ -316,12 +318,15 @@ class JsonlAnalyser {
           const yVal = this.getNestedValue(row, key.yKey);
           const traceKey = key.xKey +"|"+ key.yKey;
           if (!(traceKey in chartData)||rowIdx===0) {
-            chartData[traceKey] = { x: [], y: [] };
+            chartData[traceKey] = { x: [], y: [], _raw: [] };
           }
           chartData[traceKey].x.push(typeof xVal === 'number' ? xVal : NaN);
           chartData[traceKey].y.push(typeof yVal === 'number' ? yVal : NaN);
+          chartData[traceKey]._raw.push(row);
         }
       }
+
+      this.chartData[plotType as "scatter" | "line"] = chartData;
     }
   }
 

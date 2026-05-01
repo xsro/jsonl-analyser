@@ -24,14 +24,18 @@ export function createScatterChart(): (
       const trace = {
         x: xValues,
         y: yValues,
+        text: chartData[key]._raw.map(a=>(a as any).t.toFixed(2)),
         type: 'scatter' as const,
         mode: 'markers' as const,
         marker: {
           size: 6,
           color: '#4ec9b0',
           opacity: 0.8
-        }
+        },
+        hovertemplate: `t=%{text}<br>${xKey}: %{x:.2f}<br>${yKey}: %{y:.2f}`,
+        name: key
       };
+      console.log(trace)
 
       const validX = xValues.filter(v => !isNaN(v));
       const validY = yValues.filter(v => !isNaN(v));
