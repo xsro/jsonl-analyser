@@ -11,6 +11,34 @@ interface ChartData {
   y: { [key: string]: number[] };
 }
 
+// File System Access API 类型声明
+interface FileSystemFileHandle {
+  getFile(): Promise<File>;
+  createSyncAccessHandle(): Promise<FileSystemSyncAccessHandle>;
+  name: string;
+}
+
+interface FileSystemSyncAccessHandle {
+  read(buffer: ArrayBuffer, options?: { at?: number }): Promise<number>;
+  write(buffer: ArrayBuffer, options?: { at?: number }): Promise<number>;
+  close(): void;
+  getSize(): Promise<number>;
+  flush(): Promise<void>;
+}
+
+declare global {
+  interface Window {
+    showOpenFilePicker(options?: {
+      multiple?: boolean;
+      excludeAcceptAllOption?: boolean;
+      types?: Array<{
+        description: string;
+        accept: Record<string, string[]>;
+      }>;
+    }): Promise<FileSystemFileHandle[]>;
+  }
+}
+
 class JsonlAnalyser {
   private data: JsonData[] = [];
   private currentRow: number = 0;
@@ -19,7 +47,7 @@ class JsonlAnalyser {
   private xKey: string = 't';
   private yKeys: string[] = ['state.debug.p1[1]'];
 
-  private fileInput: HTMLInputElement;
+  private openFileBtn: HTMLButtonElement;
   private filePathEl: HTMLElement;
   private xKeyInput: HTMLInputElement;
   private yKeysInput: HTMLInputElement;
@@ -27,11 +55,11 @@ class JsonlAnalyser {
   private toggleRefreshBtn: HTMLButtonElement;
   private chartDiv: HTMLElement;
   private autoRefresh: boolean = false;
-  private currentFile: File | null = null;
+  private fileHandle: FileSystemFileHandle | null = null;
   private jsonViewer: JsonViewer;
 
   constructor() {
-    this.fileInput = document.getElementById('file-input') as HTMLInputElement;
+    this.openFileBtn = document.getElementById('open-file') as HTMLButtonElement;
     this.filePathEl = document.getElementById('file-path') as HTMLElement;
     this.xKeyInput = document.getElementById('x-key') as HTMLInputElement;
     this.yKeysInput = document.getElementById('y-keys') as HTMLInputElement;
@@ -51,7 +79,7 @@ class JsonlAnalyser {
   }
 
   private init(): void {
-    this.fileInput.addEventListener('change', this.handleFileSelect.bind(this));
+    this.openFileBtn.addEventListener('click', this.handleOpenFile.bind(this));
     this.updateChartBtn.addEventListener('click', this.handleUpdateChart.bind(this));
     this.toggleRefreshBtn.addEventListener('click', this.handleToggleRefresh.bind(this));
     window.addEventListener('resize', this.drawChart.bind(this));
@@ -60,18 +88,36 @@ class JsonlAnalyser {
     this.yKeysInput.value = this.yKeys.join(', ');
   }
 
-  private handleFileSelect(e: Event): void {
-    const target = e.target as HTMLInputElement;
-    const file = target.files?.[0];
-    if (!file) return;
+  private async handleOpenFile(): Promise<void> {
+    try {
+      const handles = await window.showOpenFilePicker({
+        types: [
+          {
+            description: 'JSON Lines',
+            accept: { 'application/json': ['.jsonl', '.jsonlines', '.json'] }
+          }
+        ],
+        multiple: false
+      });
 
-    this.currentFile = file;
-    this.filePathEl.textContent = file.name;
-    this.readFile(file);
+      if (handles.length > 0) {
+        this.fileHandle = handles[0];
+        this.filePathEl.textContent = handles[0].name;
+        await this.readFileFromHandle();
+      }
+    } catch (err) {
+      // 用户取消选择时不报错
+      if ((err as Error).name !== 'AbortError') {
+        console.error('Error opening file:', err);
+      }
+    }
   }
 
-  private async readFile(file: File): Promise<void> {
+  private async readFileFromHandle(): Promise<void> {
+    if (!this.fileHandle) return;
+
     try {
+      const file = await this.fileHandle.getFile();
       const text = await file.text();
       this.data = text
         .trim()
@@ -86,7 +132,7 @@ class JsonlAnalyser {
         this.drawChart();
       }
     } catch (error) {
-      console.error('Error parsing file:', error);
+      console.error('Error reading file:', error);
     }
   }
 
@@ -95,7 +141,7 @@ class JsonlAnalyser {
     this.toggleRefreshBtn.textContent = `Auto Refresh: ${this.autoRefresh ? 'ON' : 'OFF'}`;
     this.toggleRefreshBtn.style.background = this.autoRefresh ? '#2d8f3c' : '#0e639c';
 
-    if (this.autoRefresh && this.currentFile) {
+    if (this.autoRefresh && this.fileHandle) {
       this.startAutoRefresh();
     } else if (this.updateInterval) {
       clearInterval(this.updateInterval);
@@ -109,8 +155,8 @@ class JsonlAnalyser {
     }
 
     this.updateInterval = window.setInterval(() => {
-      if (this.currentFile) {
-        this.readFile(this.currentFile);
+      if (this.fileHandle) {
+        this.readFileFromHandle();
       }
     }, 10000);
   }
