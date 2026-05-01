@@ -26,6 +26,8 @@ jobs:
         with:
           node-version: 24
           cache: "pnpm"
+          cache-dependency-path: 'www'
+        
 
       - name: Install dependencies
         run: pnpm install
