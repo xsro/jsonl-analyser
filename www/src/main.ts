@@ -154,8 +154,11 @@ class JsonlAnalyser {
         .map(line => JSON.parse(line));
 
       if (this.data.length > 0) {
-        this.currentRow = 0;
-        this.rowInput.value = '0';
+        // 保留有效行号，超出范围则设为0
+        if (this.currentRow >= this.data.length) {
+          this.currentRow = 0;
+        }
+        this.rowInput.value = this.currentRow.toString();
         this.totalRowsEl.textContent = `/ ${this.data.length - 1}`;
         this.jsonViewer.setData(this.data);
         this.jsonViewer.setRow(this.currentRow);
