@@ -54,6 +54,12 @@ class JsonlAnalyser {
   private updateChartBtn: HTMLButtonElement;
   private toggleRefreshBtn: HTMLButtonElement;
   private chartDiv: HTMLElement;
+  private rowInput: HTMLInputElement;
+  private totalRowsEl: HTMLElement;
+  private firstRowBtn: HTMLButtonElement;
+  private lastRowBtn: HTMLButtonElement;
+  private prevRowBtn: HTMLButtonElement;
+  private nextRowBtn: HTMLButtonElement;
   private autoRefresh: boolean = false;
   private fileHandle: FileSystemFileHandle | null = null;
   private jsonViewer: JsonViewer;
@@ -66,6 +72,12 @@ class JsonlAnalyser {
     this.updateChartBtn = document.getElementById('update-chart') as HTMLButtonElement;
     this.toggleRefreshBtn = document.getElementById('toggle-refresh') as HTMLButtonElement;
     this.chartDiv = document.getElementById('plotly-chart') as HTMLElement;
+    this.rowInput = document.getElementById('row-input') as HTMLInputElement;
+    this.totalRowsEl = document.getElementById('total-rows') as HTMLElement;
+    this.firstRowBtn = document.getElementById('first-row') as HTMLButtonElement;
+    this.lastRowBtn = document.getElementById('last-row') as HTMLButtonElement;
+    this.prevRowBtn = document.getElementById('prev-row') as HTMLButtonElement;
+    this.nextRowBtn = document.getElementById('next-row') as HTMLButtonElement;
 
     const jsonViewerEl = document.getElementById('json-viewer') as HTMLElement;
     this.jsonViewer = new JsonViewer({
@@ -82,10 +94,26 @@ class JsonlAnalyser {
     this.openFileBtn.addEventListener('click', this.handleOpenFile.bind(this));
     this.updateChartBtn.addEventListener('click', this.handleUpdateChart.bind(this));
     this.toggleRefreshBtn.addEventListener('click', this.handleToggleRefresh.bind(this));
+    this.firstRowBtn.addEventListener('click', () => this.goToRow(0));
+    this.lastRowBtn.addEventListener('click', () => this.goToRow(this.data.length - 1));
+    this.prevRowBtn.addEventListener('click', () => this.goToRow(this.currentRow - 1));
+    this.nextRowBtn.addEventListener('click', () => this.goToRow(this.currentRow + 1));
+    this.rowInput.addEventListener('change', (e) => {
+      const target = e.target as HTMLInputElement;
+      this.goToRow(parseInt(target.value) || 0);
+    });
     window.addEventListener('resize', this.drawChart.bind(this));
 
     this.xKeyInput.value = this.xKey;
     this.yKeysInput.value = this.yKeys.join(', ');
+  }
+
+  private goToRow(row: number): void {
+    if (this.data.length === 0) return;
+    const validRow = Math.max(0, Math.min(row, this.data.length - 1));
+    this.currentRow = validRow;
+    this.rowInput.value = validRow.toString();
+    this.jsonViewer.setRow(validRow);
   }
 
   private async handleOpenFile(): Promise<void> {
@@ -126,6 +154,9 @@ class JsonlAnalyser {
         .map(line => JSON.parse(line));
 
       if (this.data.length > 0) {
+        this.currentRow = 0;
+        this.rowInput.value = '0';
+        this.totalRowsEl.textContent = `/ ${this.data.length - 1}`;
         this.jsonViewer.setData(this.data);
         this.jsonViewer.setRow(this.currentRow);
         this.updateChartData();

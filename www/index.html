@@ -4,232 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JSONL Analyser</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #1e1e1e;
-      color: #d4d4d4;
-      height: 100vh;
-      overflow: hidden;
-    }
-    .container {
-      display: flex;
-      height: 100vh;
-    }
-    .panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      border-right: 1px solid #333;
-      min-width: 0;
-    }
-    .panel:last-child {
-      border-right: none;
-    }
-    .panel-header {
-      padding: 12px 16px;
-      background: #252526;
-      border-bottom: 1px solid #333;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .panel-header h2 {
-      font-size: 14px;
-      font-weight: 500;
-      color: #ccc;
-    }
-    .panel-content {
-      flex: 1;
-      overflow: auto;
-      padding: 16px;
-    }
-    .file-input-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .file-input-container input[type="file"] {
-      display: none;
-    }
-    .btn {
-      padding: 6px 12px;
-      background: #0e639c;
-      border: none;
-      border-radius: 2px;
-      color: white;
-      font-size: 12px;
-      cursor: pointer;
-    }
-    .btn:hover {
-      background: #1177bb;
-    }
-    .file-path {
-      font-size: 12px;
-      color: #888;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 200px;
-    }
-    .row-selector {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-left: auto;
-    }
-    .row-selector input {
-      width: 60px;
-      padding: 4px 8px;
-      background: #3c3c3c;
-      border: 1px solid #555;
-      color: #d4d4d4;
-      font-size: 12px;
-    }
-    .row-selector span {
-      font-size: 12px;
-      color: #888;
-    }
-    .json-viewer {
-      font-family: 'Consolas', 'Monaco', monospace;
-      font-size: 13px;
-      line-height: 1.6;
-    }
-    .json-matrix-container {
-      margin: 8px 0;
-    }
-    .json-matrix-header {
-      padding: 8px 12px;
-      background: #2d2d2d;
-      border-radius: 4px;
-      color: #9cdcfe;
-      font-size: 12px;
-    }
-    .json-toggle-btn {
-      color: #569cd6;
-      cursor: pointer;
-      margin-left: 8px;
-    }
-    .json-toggle-btn:hover {
-      text-decoration: underline;
-    }
-    .json-matrix-content {
-      margin-top: 8px;
-      overflow-x: auto;
-    }
-    .json-matrix-table {
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-    .json-matrix-table th,
-    .json-matrix-table td {
-      padding: 4px 8px;
-      border: 1px solid #444;
-      text-align: right;
-    }
-    .json-matrix-table th {
-      background: #252526;
-      color: #888;
-    }
-    .json-matrix-table .row-index {
-      background: #252526;
-      color: #888;
-      font-weight: bold;
-    }
-    .json-vector-container {
-      display: inline-block;
-      margin: 4px 0;
-    }
-    .json-vector-content {
-      display: inline;
-    }
-    .json-vector-summary {
-      color: #6a9955;
-      font-style: italic;
-    }
-    .json-bracket {
-      color: #ffd700;
-    }
-    .json-array-content,
-    .json-object-content {
-      display: block;
-      margin-left: 20px;
-    }
-    .json-item {
-      margin: 2px 0;
-    }
-    .json-more {
-      color: #6a9955;
-      font-style: italic;
-    }
-    .json-expand {
-      color: #569cd6;
-      cursor: pointer;
-      font-size: 11px;
-    }
-    .json-expand:hover {
-      text-decoration: underline;
-    }
-    .chart-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .chart-controls input {
-      padding: 4px 8px;
-      background: #3c3c3c;
-      border: 1px solid #555;
-      color: #d4d4d4;
-      font-size: 12px;
-    }
-    .chart-controls input.x-key {
-      width: 80px;
-    }
-    .chart-controls input.y-key {
-      width: 150px;
-    }
-    .chart-controls label {
-      font-size: 12px;
-      color: #888;
-    }
-    .chart-container {
-      width: 100%;
-      height: calc(100% - 50px);
-      position: relative;
-    }
-    #plotly-chart {
-      width: 100%;
-      height: 100%;
-    }
-    .loading {
-      color: #888;
-      font-size: 12px;
-    }
-    .error {
-      color: #f48771;
-      font-size: 12px;
-    }
-  </style>
+  <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
   <div class="container">
     <div class="panel" id="data-panel">
       <div class="panel-header">
-        <h2>Data Viewer</h2>
+        <h2>JSONL</h2>
         <div class="file-input-container">
           <button class="btn" id="open-file">Open File</button>
           <span class="file-path" id="file-path">No file selected</span>
-          <button class="btn" id="toggle-refresh">Auto Refresh: OFF</button>
+          <button class="btn" id="toggle-refresh">Auto Refresh<br> OFF</button>
         </div>
         <div class="row-selector">
+          <button class="btn btn-small" id="first-row" title="Go to first row">&lt;&lt;</button>
+          <button class="btn btn-small" id="prev-row" title="Previous row">&lt;</button>
           <span>Row:</span>
           <input type="number" id="row-input" value="0" min="0">
+          <button class="btn btn-small" id="next-row" title="Next row">&gt;</button>
+          <button class="btn btn-small" id="last-row" title="Go to last row">&gt;&gt;</button>
           <span id="total-rows"></span>
         </div>
       </div>
