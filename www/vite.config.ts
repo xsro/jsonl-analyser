@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   base: '/jsonl-analyser/',
   build: {
-    outDir: 'dist',
+    outDir: 'jsonl-analyser',
     assetsDir: 'assets',
   },
   server: {
