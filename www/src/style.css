@@ -93,27 +93,69 @@ body {
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: 13px;
   line-height: 1.6;
+  white-space: pre;
+}
+.json-key {
+  color: #9cdcfe;
+  cursor: pointer;
+}
+.json-key:hover {
+  text-decoration: underline;
+}
+.json-number {
+  color: #b5cea8;
+}
+.json-string {
+  color: #ce9178;
+}
+.json-boolean {
+  color: #569cd6;
+}
+.json-null {
+  color: #569cd6;
+}
+.json-bracket {
+  color: #ffd700;
+}
+.json-toggle {
+  color: #888;
+  cursor: pointer;
+  font-size: 10px;
+}
+.json-toggle:hover {
+  color: #fff;
+}
+.json-summary {
+  color: #6a9955;
+  font-style: italic;
+  cursor: pointer;
+}
+.json-summary:hover {
+  text-decoration: underline;
+}
+.json-array-container,
+.json-object-container {
+  display: inline;
+}
+.json-array-content,
+.json-object-content {
+  display: inline;
 }
 .json-matrix-container {
+  display: block;
   margin: 8px 0;
-}
-.json-matrix-header {
-  padding: 8px 12px;
-  background: #2d2d2d;
-  border-radius: 4px;
-  color: #9cdcfe;
-  font-size: 12px;
 }
 .json-toggle-btn {
   color: #569cd6;
   cursor: pointer;
-  margin-left: 8px;
 }
 .json-toggle-btn:hover {
   text-decoration: underline;
 }
 .json-matrix-content {
   margin-top: 8px;
+}
+.json-matrix-table-wrapper {
   overflow-x: auto;
 }
 .json-matrix-table {
@@ -125,6 +167,7 @@ body {
   padding: 4px 8px;
   border: 1px solid #444;
   text-align: right;
+  min-width: 60px;
 }
 .json-matrix-table th {
   background: #252526;
@@ -134,40 +177,6 @@ body {
   background: #252526;
   color: #888;
   font-weight: bold;
-}
-.json-vector-container {
-  display: inline-block;
-  margin: 4px 0;
-}
-.json-vector-content {
-  display: inline;
-}
-.json-vector-summary {
-  color: #6a9955;
-  font-style: italic;
-}
-.json-bracket {
-  color: #ffd700;
-}
-.json-array-content,
-.json-object-content {
-  display: block;
-  margin-left: 20px;
-}
-.json-item {
-  margin: 2px 0;
-}
-.json-more {
-  color: #6a9955;
-  font-style: italic;
-}
-.json-expand {
-  color: #569cd6;
-  cursor: pointer;
-  font-size: 11px;
-}
-.json-expand:hover {
-  text-decoration: underline;
 }
 .chart-controls {
   display: flex;
