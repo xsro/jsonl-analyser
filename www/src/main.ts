@@ -288,7 +288,7 @@ class JsonlAnalyser {
 
   private updateChartData(): void {
     for (const plotType of ["scatter", "line"]) {
-      let chartData: ChartData = this.chartData[plotType as "scatter" | "line"];
+      let chartData: ChartData = {};
       const keys = this.chartDataKeys[plotType as "scatter" | "line"];
 
       for (const rowIdx of this.data.keys()) {
@@ -313,6 +313,7 @@ class JsonlAnalyser {
           }
         }
       }
+      this.chartData[plotType as "scatter" | "line"] = chartData;
     }
   }
 
