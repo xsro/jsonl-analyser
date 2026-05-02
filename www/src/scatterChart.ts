@@ -1,6 +1,18 @@
 import Plotly from 'plotly.js-dist-min';
 import { ChartData } from './lineChart';
 
+const colors = [
+  "#A8DADC", // 浅蓝绿
+  "#457B9D", // 中蓝
+  "#1D3557", // 深蓝
+  "#F1FAEE", // 米白
+  "#E63946", // 珊瑚红
+  "#F4A261", // 浅橙
+  "#2A9D8F", // 深青
+  "#BC6C25", // 土黄
+  "#6D597A", // 暗紫
+  "#B5838D"  // 暗粉
+];
 export function createScatterChart(): (
   container: HTMLElement,
   chartData: ChartData,
@@ -27,9 +39,10 @@ export function createScatterChart(): (
         text: chartData[key].text,
         type: 'scatter' as const,
         mode: 'markers' as const,
+
         marker: {
           size: 6,
-          color: '#4ec9b0',
+          color: colors[keyIdx % colors.length],
           opacity: 0.8
         },
         hovertemplate: `t=%{text}<br>${xKey}: %{x:.2f}<br>${yKey}: %{y:.2f}`,
@@ -61,6 +74,7 @@ export function createScatterChart(): (
     const rangeMin = dataMin - padding;
     const rangeMax = dataMax + padding;
 
+    
 
 
     const layout = {
