@@ -23,7 +23,9 @@ A web-based tool for analyzing and visualizing JSON Lines (JSONL) data files.
 | Chart Type | X Key | Y Keys |
 |------------|-------|--------|
 | Line Chart | `t` | `state.debug.p1[0]`, `state.debug.p1[1]`, `state.debug.p1[2]` |
-| Scatter Plot | `state.debug.p1[0]` | `state.debug.p1[1]` |
+| Scatter Plot | `state.agents[:].p[0]` | `state.agents[:].p[1]` |
+
+*Hint:* We use `:` to access all elements in an array.
 
 ## Usage
 

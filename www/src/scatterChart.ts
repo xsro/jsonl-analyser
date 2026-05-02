@@ -24,7 +24,7 @@ export function createScatterChart(): (
       const trace = {
         x: xValues,
         y: yValues,
-        text: chartData[key]._raw.map(a=>(a as any).t.toFixed(2)),
+        text: chartData[key].text,
         type: 'scatter' as const,
         mode: 'markers' as const,
         marker: {

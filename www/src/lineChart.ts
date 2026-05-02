@@ -4,7 +4,7 @@ export interface ChartData {
   [key: string]: { 
     x: number[]; 
     y: number[];
-    _raw: unknown[];
+    text: string[];
   };
 }
 
