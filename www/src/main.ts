@@ -2,10 +2,7 @@
 import { JsonViewer } from './jsonViewer';
 import { ChartData, createLineChart } from './lineChart';
 import { createScatterChart } from './scatterChart';
-
-interface JsonData {
-  [key: string]: unknown;
-}
+import { JsonData,getNestedValue,getNestedValueWithColons } from './utils/json';
 
 // File System Access API 类型声明
 interface FileSystemFileHandle {
@@ -47,9 +44,7 @@ class JsonlAnalyser {
   private chartData: { scatter: ChartData, line: ChartData } = { scatter: {}, line: {} };
   private chartDataKeys = {
     scatter: [
-      { xKey: 'state.agents[0].p[0]', yKey: 'state.agents[0].p[1]' },
-      { xKey: 'state.agents[1].p[0]', yKey: 'state.agents[1].p[1]' },
-      { xKey: 'state.agents[2].p[0]', yKey: 'state.agents[2].p[1]' }
+      { xKey: 'state.agents[:].p[0]', yKey: 'state.agents[:].p[1]' }
     ],
     line: [
       { xKey: 't', yKey: 'state.debug.p1[0]' },
@@ -291,21 +286,6 @@ class JsonlAnalyser {
     }, 10000);
   }
 
-  private getNestedValue(obj: unknown, path: string): unknown {
-    const keys = path.replace(/\[(\d+)\]/g, '.$1').split('.');
-    let result: unknown = obj;
-
-    for (const key of keys) {
-      if (result && typeof result === 'object') {
-        result = (result as JsonData)[key];
-      } else {
-        return undefined;
-      }
-    }
-
-    return result;
-  }
-
   private updateChartData(): void {
     for (const plotType of ["scatter", "line"]) {
       let chartData: ChartData = {};
@@ -314,19 +294,24 @@ class JsonlAnalyser {
       for (const rowIdx of this.data.keys()) {
         const row=this.data[rowIdx];
         for (const key of keys) {
-          const xVal = this.getNestedValue(row, key.xKey);
-          const yVal = this.getNestedValue(row, key.yKey);
-          const traceKey = key.xKey +"|"+ key.yKey;
-          if (!(traceKey in chartData)||rowIdx===0) {
-            chartData[traceKey] = { x: [], y: [], _raw: [] };
+          const xVals = getNestedValueWithColons(row, key.xKey);
+          const yVals = getNestedValueWithColons(row, key.yKey);
+
+          const xValsEntries = Object.entries(xVals);
+          const yValsEntries = Object.entries(yVals);
+          
+          for (let i=0; i<yValsEntries.length; i++){
+            const [yKey,yVal] = yValsEntries[i];
+            const [xKey,xVal] = xValsEntries[i];
+            const traceKey = xKey +"|"+ yKey;
+            if (!(traceKey in chartData)||rowIdx===0) {
+              chartData[traceKey] = { x: [], y: [] };
+            }
+            chartData[traceKey].x.push(typeof xVal === 'number' ? xVal : NaN);
+            chartData[traceKey].y.push(typeof yVal === 'number' ? yVal : NaN);
           }
-          chartData[traceKey].x.push(typeof xVal === 'number' ? xVal : NaN);
-          chartData[traceKey].y.push(typeof yVal === 'number' ? yVal : NaN);
-          chartData[traceKey]._raw.push(row);
         }
       }
-
-      this.chartData[plotType as "scatter" | "line"] = chartData;
     }
   }
 

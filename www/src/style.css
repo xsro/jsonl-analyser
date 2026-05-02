@@ -345,3 +345,19 @@ body {
   opacity: 1;
   background: rgba(244, 135, 113, 0.1);
 }
+
+/* Responsive: vertical layout when width < height */
+@media (orientation: portrait) {
+  .container {
+    flex-direction: column;
+  }
+  .panel {
+    flex: none;
+    height: 50%;
+    border-right: none;
+    border-bottom: 1px solid #333;
+  }
+  .panel:last-child {
+    border-bottom: none;
+  }
+}
