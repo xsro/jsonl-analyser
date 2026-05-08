@@ -241,9 +241,17 @@ class JsonlAnalyser {
       const text = await file.text();
       this.data = text
         .trim()
-        .split('\n')
-        .filter(line => line.trim())
-        .map(line => JSON.parse(line));
+        .split("\n")
+        .filter((line) => line.trim())
+        .map((line, index) => {
+          try {
+            return JSON.parse(line);
+          } catch (e) {
+            console.error(`Error parsing line ${index + 1}: ${e}`);
+            console.log(line)
+          }
+          return undefined;
+        }).filter(a=>a);
 
       if (this.data.length > 0) {
         if (this.currentRow >= this.data.length) {
