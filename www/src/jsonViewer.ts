@@ -62,6 +62,16 @@ export class JsonViewer {
   private handleClick(e: MouseEvent): void {
     this.clickCount++;
     const target = e.target as HTMLElement;
+
+    // 显示 data-path 到 message-display
+    const dataPath = target.getAttribute('data-path');
+    if (dataPath) {
+      const messageDisplay = document.getElementById('message-display');
+      if (messageDisplay) {
+        messageDisplay.textContent = `path: ${dataPath.replace('obj.', '')}`;
+      }
+    }
+
     const keyEl = target.closest('.json-key');
     const toggleEl = target.closest('.json-toggle, .json-toggle-btn, .json-summary');
 

@@ -1,85 +1,85 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JSONL Analyser</title>
-  <link rel="stylesheet" href="/src/style.css">
-</head>
-<body>
-  <div class="container">
-    <div class="panel" id="data-panel">
-      <div class="panel-header">
-        <h2>JSONL <a href="https://xsro.github.io/jsonl-analyser/">Github</a></h2>
-        <div class="file-input-container">
-          <button class="btn" id="open-file">Open File</button>
-          <span class="file-path" id="file-path">No file selected</span>
-          <button class="btn" id="toggle-refresh">Auto Refresh: OFF</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JSONL Analyser</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="panel" id="data-panel">
+        <div class="panel-header">
+          <h2>JSONL <a href="https://xsro.github.io/jsonl-analyser/">Github</a></h2>
+          <div class="file-input-container">
+            <button class="btn" id="open-file">Open File</button>
+            <span class="file-path" id="file-path">No file selected</span>
+            <button class="btn" id="toggle-refresh">Auto Refresh: OFF</button>
+          </div>
         </div>
-      </div>
-      <div class="row-selector">
+        <div class="row-selector">
           <button class="btn btn-small" id="first-row" title="Go to first row">&lt;&lt;</button>
           <button class="btn btn-small" id="prev-row" title="Previous row">&lt;</button>
           <span>Row:</span>
-          <input type="number" id="row-input" value="0" min="0">
+          <input type="number" id="row-input" value="0" min="0" />
           <button class="btn btn-small" id="next-row" title="Next row">&gt;</button>
           <button class="btn btn-small" id="last-row" title="Go to last row">&gt;&gt;</button>
           <span id="total-rows"></span>
+          <span id="message-display">by xsro.github.io</span>
         </div>
-      <div class="panel-content">
-        <div class="json-viewer" id="json-viewer">
-          <div class="loading">Select a JSONL file to begin</div>
+        <div class="panel-content">
+          <div class="json-viewer" id="json-viewer">
+            <div class="loading">Select a JSONL file to begin</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="chart-panel">
+        <div class="panel-header">
+          <h2>Charts</h2>
+          <div class="chart-controls">
+            <select id="chart-type">
+              <option value="line">Line Chart</option>
+              <option value="scatter">Scatter Plot</option>
+            </select>
+            <button class="btn" id="open-key-config">Configure Keys</button>
+          </div>
+        </div>
+        <div class="panel-content">
+          <div class="chart-container">
+            <div id="plotly-chart"></div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="panel" id="chart-panel">
-      <div class="panel-header">
-        <h2>Charts</h2>
-        <div class="chart-controls">
-          <select id="chart-type">
-            <option value="line">Line Chart</option>
-            <option value="scatter">Scatter Plot</option>
-          </select>
-          <button class="btn" id="open-key-config">Configure Keys</button>
-        </div>
-      </div>
-      <div class="panel-content">
-        <div class="chart-container">
-          <div id="plotly-chart"></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Key Configuration Modal -->
-  <div id="key-config-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Configure Chart Keys</h3>
-        <button class="modal-close" id="close-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p class="hint">First row is X Key, remaining rows are Y Keys</p>
-        <table id="keys-table">
-          <thead>
-            <tr>
-              <th>X Key</th>
-              <th>Y Key</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="keys-tbody">
-          </tbody>
-        </table>
-        <button class="btn btn-small" id="add-key-row">+ Add Row</button>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" id="cancel-keys">Cancel</button>
-        <button class="btn btn-primary" id="apply-keys">Apply</button>
+    <!-- Key Configuration Modal -->
+    <div id="key-config-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Configure Chart Keys</h3>
+          <button class="modal-close" id="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="hint">First row is X Key, remaining rows are Y Keys</p>
+          <table id="keys-table">
+            <thead>
+              <tr>
+                <th>X Key</th>
+                <th>Y Key</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="keys-tbody"></tbody>
+          </table>
+          <button class="btn btn-small" id="add-key-row">+ Add Row</button>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" id="cancel-keys">Cancel</button>
+          <button class="btn btn-primary" id="apply-keys">Apply</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script type="module" src="/src/main.ts"></script>
-</body>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>
