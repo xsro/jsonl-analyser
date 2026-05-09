@@ -1,0 +1,13 @@
+{
+  // 默认格式化工具
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // 保存时自动格式化
+  "editor.formatOnSave": true,
+  // 针对 TS/TSX 单独绑定
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
