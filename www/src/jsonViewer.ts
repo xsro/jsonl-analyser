@@ -95,7 +95,7 @@ export class JsonViewer {
     }
 
     const data = this.data[this.currentRow];
-    this.container.innerHTML = this.renderValue(data, '', 0);
+    this.container.innerHTML = this.renderValue(data, '', 0).short;
   }
 
   private isMatrixArray(arr: unknown): boolean {
@@ -108,30 +108,46 @@ export class JsonViewer {
     );
   }
 
-  private renderValue(value: unknown, path: string, indent: number): string {
+  private renderValue(value: unknown, path: string, indent: number): {short:string,long?:string|undefined}{
+    const valueStr0=this._renderValue(value, path, indent + 1)
+        let valueStr:{short:string,long?:string|undefined};
+        if (typeof valueStr0 === 'string'){
+          valueStr={short:valueStr0}
+        } else {
+          valueStr = valueStr0;
+        }
+    return valueStr;
+  }
+
+
+  private _renderValue(value: unknown, path: string, indent: number): string | {short:string,long?:string|undefined}{
     if (value === null) {
       return '<span class="json-null">null</span>';
     }
 
     if (typeof value === 'boolean') {
-      return `<span class="json-boolean">${value}</span>`;
+      return `<span class="json-boolean"  data-path="${path}">${value}</span>`;
     }
 
     if (typeof value === 'number') {
-      return `<span class="json-number">${this.formatNumber(value)}</span>`;
+      return `<span class="json-number" data-path="${path}">${this.formatNumber(value)}</span>`;
     }
 
     if (typeof value === 'string') {
-      return `<span class="json-string">"${this.escapeHtml(value)}"</span>`;
+      return `<span class="json-string"  data-path="${path}">"${this.escapeHtml(value)}"</span>`;
     }
 
     if (Array.isArray(value)) {
       if (value.length === 0) {
-        return '<span class="json-bracket">[]</span>';
+        return `<span class="json-bracket"  data-path="${path}">[]</span>`;
       }
 
       if (!value.some(val=>typeof val!=="number")){
-        return '<span>['+value.join(",")+']</span>';
+        const mapArrayValue=(value:number,idx:number)=>{
+          const _path=path+"["+idx+"]";
+          return `<span class="json-number" data-path="${_path}">${this.formatNumber(value)}</span>`
+        }
+        return '<span>['+value.map(mapArrayValue).join(",")+']</span>';
       }
 
       if (this.isMatrixArray(value)) {
@@ -148,20 +164,18 @@ export class JsonViewer {
     return String(value);
   }
 
-  private renderMatrix(data: unknown[][], path: string, indent: number): string {
+  private renderMatrix(data: unknown[][], path: string, indent: number): {short:string,long?:string|undefined} {
     const rows = data.length;
     const cols = data[0].length;
     const togglePath = path || 'matrix';
     const isCollapsed = this.collapsedKeys.has(togglePath);
 
-    let html = `<span class="json-matrix-container" data-path="${togglePath}">`;
-
     if (isCollapsed) {
-      html += `<span class="json-toggle-btn" data-path="${togglePath}">[${rows}×${cols}] ▶</span>`;
+      return {short:`<span class="json-toggle-btn" data-path="${togglePath}">[${rows}×${cols}] ▶</span>`};
     } else {
-      html += `<span class="json-toggle-btn" data-path="${togglePath}">[${rows}×${cols}] ▼</span>`;
-      html += `<span class="json-matrix-content">\n`;
-      html += `<div class="json-matrix-table-wrapper"><table class="json-matrix-table">`;
+      const short=`<span class="json-toggle-btn" data-path="${togglePath}">[${rows}×${cols}] ▼</span>`;
+      let html = "";
+      html += `<div class="json-matrix-table-wrapper" data-path="${togglePath}"><table class="json-matrix-table">`;
       html += '<thead><tr><th></th>';
       for (let j = 0; j < cols; j++) {
         html += `<th>${j}</th>`;
@@ -173,16 +187,13 @@ export class JsonViewer {
         for (let j = 0; j < cols; j++) {
           const val = data[i][j];
           const valStr = typeof val === 'number' ? this.formatNumber(val) : this.escapeHtml(String(val));
-          html += `<td>${valStr}</td>`;
+          html += `<td data-path="${path}[${i}][${j}]">${valStr}</td>`;
         }
         html += '</tr>';
       }
       html += '</tbody></table></div>\n';
-      html += `</span>`;
-    }
-
-    html += '</span>';
-    return html;
+      return {short,long:html};
+    } 
   }
 
   private renderArray(data: unknown[], path: string, indent: number): string {
@@ -252,9 +263,14 @@ export class JsonViewer {
         const value = obj[key];
         const isChildComplex = typeof value === 'object' && value !== null;
 
-        html += `${childIndent}<span class="json-key" data-path="${fullPath}">"${this.escapeHtml(key)}"</span>: ${isChildComplex ? '' : ''}${this.renderValue(value, fullPath, indent + 1)}`;
+        const valueStr=this.renderValue(value, fullPath, indent + 1);
+        html += `${childIndent}<span class="json-key" data-path="${fullPath}">"${this.escapeHtml(key)}"</span>: ${isChildComplex ? '' : ''}${valueStr.short}`;
+  
         if (i < keys.length - 1) html += ',';
         html += '\n';
+        if (valueStr.long){
+         html += valueStr.long; 
+        }
       }
 
       html += `${indentStr}</span><span class="json-bracket">}</span>`;
