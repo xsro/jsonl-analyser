@@ -11,7 +11,7 @@ export class JsonViewer {
   private currentRow: number = 0;
   private onRowChange?: (row: number) => void;
   private collapsedKeys: Set<string> = new Set();
-  private clickCount=0;
+  private clickCount = 0;
 
   private rowInput: HTMLInputElement;
   private totalRowsEl: HTMLElement;
@@ -103,24 +103,31 @@ export class JsonViewer {
     if (!Array.isArray(arr[0])) return false;
     const firstRowLen = (arr[0] as unknown[]).length;
     if (firstRowLen === 0) return false;
-    return (arr as unknown[]).every(item =>
-      Array.isArray(item) && (item as unknown[]).length === firstRowLen
+    return (arr as unknown[]).every(
+      item => Array.isArray(item) && (item as unknown[]).length === firstRowLen
     );
   }
 
-  private renderValue(value: unknown, path: string, indent: number): {short:string,long?:string|undefined}{
-    const valueStr0=this._renderValue(value, path, indent + 1)
-        let valueStr:{short:string,long?:string|undefined};
-        if (typeof valueStr0 === 'string'){
-          valueStr={short:valueStr0}
-        } else {
-          valueStr = valueStr0;
-        }
+  private renderValue(
+    value: unknown,
+    path: string,
+    indent: number
+  ): { short: string; long?: string | undefined } {
+    const valueStr0 = this._renderValue(value, path, indent + 1);
+    let valueStr: { short: string; long?: string | undefined };
+    if (typeof valueStr0 === 'string') {
+      valueStr = { short: valueStr0 };
+    } else {
+      valueStr = valueStr0;
+    }
     return valueStr;
   }
 
-
-  private _renderValue(value: unknown, path: string, indent: number): string | {short:string,long?:string|undefined}{
+  private _renderValue(
+    value: unknown,
+    path: string,
+    indent: number
+  ): string | { short: string; long?: string | undefined } {
     if (value === null) {
       return '<span class="json-null">null</span>';
     }
@@ -142,12 +149,12 @@ export class JsonViewer {
         return `<span class="json-bracket"  data-path="${path}">[]</span>`;
       }
 
-      if (!value.some(val=>typeof val!=="number")){
-        const mapArrayValue=(value:number,idx:number)=>{
-          const _path=path+"["+idx+"]";
-          return `<span class="json-number" data-path="${_path}">${this.formatNumber(value)}</span>`
-        }
-        return '<span>['+value.map(mapArrayValue).join(",")+']</span>';
+      if (!value.some(val => typeof val !== 'number')) {
+        const mapArrayValue = (value: number, idx: number) => {
+          const _path = path + '[' + idx + ']';
+          return `<span class="json-number" data-path="${_path}">${this.formatNumber(value)}</span>`;
+        };
+        return '<span>[' + value.map(mapArrayValue).join(',') + ']</span>';
       }
 
       if (this.isMatrixArray(value)) {
@@ -164,17 +171,23 @@ export class JsonViewer {
     return String(value);
   }
 
-  private renderMatrix(data: unknown[][], path: string, indent: number): {short:string,long?:string|undefined} {
+  private renderMatrix(
+    data: unknown[][],
+    path: string,
+    indent: number
+  ): { short: string; long?: string | undefined } {
     const rows = data.length;
     const cols = data[0].length;
     const togglePath = path || 'matrix';
     const isCollapsed = this.collapsedKeys.has(togglePath);
 
     if (isCollapsed) {
-      return {short:`<span class="json-toggle-btn" data-path="${togglePath}">[${rows}×${cols}] ▶</span>`};
+      return {
+        short: `<span class="json-toggle-btn" data-path="${togglePath}">[${rows}×${cols}] ▶</span>`,
+      };
     } else {
-      const short=`<span class="json-toggle-btn" data-path="${togglePath}">[${rows}×${cols}] ▼</span>`;
-      let html = "";
+      const short = `<span class="json-toggle-btn" data-path="${togglePath}">[${rows}×${cols}] ▼</span>`;
+      let html = '';
       html += `<div class="json-matrix-table-wrapper" data-path="${togglePath}"><table class="json-matrix-table">`;
       html += '<thead><tr><th></th>';
       for (let j = 0; j < cols; j++) {
@@ -186,14 +199,15 @@ export class JsonViewer {
         html += `<tr><td class="row-index">${i}</td>`;
         for (let j = 0; j < cols; j++) {
           const val = data[i][j];
-          const valStr = typeof val === 'number' ? this.formatNumber(val) : this.escapeHtml(String(val));
+          const valStr =
+            typeof val === 'number' ? this.formatNumber(val) : this.escapeHtml(String(val));
           html += `<td data-path="${path}[${i}][${j}]">${valStr}</td>`;
         }
         html += '</tr>';
       }
       html += '</tbody></table></div>\n';
-      return {short,long:html};
-    } 
+      return { short, long: html };
+    }
   }
 
   private renderArray(data: unknown[], path: string, indent: number): string {
@@ -201,7 +215,7 @@ export class JsonViewer {
     const childIndent = '  '.repeat(indent + 1);
     const togglePath = path || 'arr';
     const defaultCollapsed = data.length > 10;
-    if ((path !== '' && defaultCollapsed) && this.clickCount===0){
+    if (path !== '' && defaultCollapsed && this.clickCount === 0) {
       this.collapsedKeys.add(path);
     }
     const isCollapsed = this.collapsedKeys.has(togglePath);
@@ -241,7 +255,7 @@ export class JsonViewer {
     const childIndent = '  '.repeat(indent + 1);
     const togglePath = path || 'obj';
     const defaultCollapsed = keys.length > 10;
-    if (path !== '' && defaultCollapsed && this.clickCount===0){
+    if (path !== '' && defaultCollapsed && this.clickCount === 0) {
       this.collapsedKeys.add(togglePath);
     }
     const isCollapsed = this.collapsedKeys.has(togglePath);
@@ -263,13 +277,13 @@ export class JsonViewer {
         const value = obj[key];
         const isChildComplex = typeof value === 'object' && value !== null;
 
-        const valueStr=this.renderValue(value, fullPath, indent + 1);
+        const valueStr = this.renderValue(value, fullPath, indent + 1);
         html += `${childIndent}<span class="json-key" data-path="${fullPath}">"${this.escapeHtml(key)}"</span>: ${isChildComplex ? '' : ''}${valueStr.short}`;
-  
+
         if (i < keys.length - 1) html += ',';
         html += '\n';
-        if (valueStr.long){
-         html += valueStr.long; 
+        if (valueStr.long) {
+          html += valueStr.long;
         }
       }
 

@@ -2,34 +2,33 @@ import Plotly from 'plotly.js-dist-min';
 import { ChartData } from './lineChart';
 
 const colors = [
-  "#A8DADC", // 浅蓝绿
-  "#457B9D", // 中蓝
-  "#1D3557", // 深蓝
-  "#F1FAEE", // 米白
-  "#E63946", // 珊瑚红
-  "#F4A261", // 浅橙
-  "#2A9D8F", // 深青
-  "#BC6C25", // 土黄
-  "#6D597A", // 暗紫
-  "#B5838D"  // 暗粉
+  '#A8DADC', // 浅蓝绿
+  '#457B9D', // 中蓝
+  '#1D3557', // 深蓝
+  '#F1FAEE', // 米白
+  '#E63946', // 珊瑚红
+  '#F4A261', // 浅橙
+  '#2A9D8F', // 深青
+  '#BC6C25', // 土黄
+  '#6D597A', // 暗紫
+  '#B5838D', // 暗粉
 ];
 export function createScatterChart(): (
   container: HTMLElement,
   chartData: ChartData,
   xKey: string,
-  yKey: string,
+  yKey: string
 ) => void {
   return function renderScatter(
     container: HTMLElement,
     chartData: ChartData,
     xKey: string,
-    yKey: string,
+    yKey: string
   ): void {
-
-    let xMin = + Infinity; 
-    let xMax = - Infinity; 
-    let yMin = + Infinity; 
-    let yMax = - Infinity; 
+    let xMin = +Infinity;
+    let xMax = -Infinity;
+    let yMin = +Infinity;
+    let yMax = -Infinity;
     const traces = Object.keys(chartData).map((key, keyIdx) => {
       const xValues = chartData[key].x;
       const yValues = chartData[key].y;
@@ -43,12 +42,12 @@ export function createScatterChart(): (
         marker: {
           size: 6,
           color: colors[keyIdx % colors.length],
-          opacity: 0.8
+          opacity: 0.8,
         },
         hovertemplate: `t=%{text}<br>${xKey}: %{x:.2f}<br>${yKey}: %{y:.2f}`,
-        name: key
+        name: key,
       };
-      console.log(trace)
+      console.log(trace);
 
       const validX = xValues.filter(v => !isNaN(v));
       const validY = yValues.filter(v => !isNaN(v));
@@ -58,24 +57,19 @@ export function createScatterChart(): (
         return;
       }
 
-      xMin = Math.min(xMin,...validX);
-      xMax = Math.max(yMax,...validX);
-      yMin = Math.min(yMin,...validY);
-      yMax = Math.max(yMax,...validY);
+      xMin = Math.min(xMin, ...validX);
+      xMax = Math.max(yMax, ...validX);
+      yMin = Math.min(yMin, ...validY);
+      yMax = Math.max(yMax, ...validY);
 
-      return trace
+      return trace;
     });
-
-    
 
     const dataMin = Math.min(xMin, yMin);
     const dataMax = Math.max(xMax, yMax);
     const padding = (dataMax - dataMin) * 0.05;
     const rangeMin = dataMin - padding;
     const rangeMax = dataMax + padding;
-
-    
-
 
     const layout = {
       paper_bgcolor: '#1e1e1e',
@@ -88,15 +82,15 @@ export function createScatterChart(): (
         zerolinecolor: '#555',
         range: [rangeMin, rangeMax],
         scaleanchor: 'y',
-        scaleratio: 1
+        scaleratio: 1,
       },
       yaxis: {
         title: yKey,
         gridcolor: '#333',
         zerolinecolor: '#555',
-        range: [rangeMin, rangeMax]
+        range: [rangeMin, rangeMax],
       },
-      showlegend: false
+      showlegend: false,
     };
 
     const config = { responsive: true, displayModeBar: false };

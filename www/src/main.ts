@@ -2,7 +2,7 @@
 import { JsonViewer } from './jsonViewer';
 import { ChartData, createLineChart } from './lineChart';
 import { createScatterChart } from './scatterChart';
-import { JsonData,getNestedValue,getNestedValueWithColons } from './utils/json';
+import { JsonData, getNestedValue, getNestedValueWithColons } from './utils/json';
 
 // File System Access API 类型声明
 interface FileSystemFileHandle {
@@ -41,16 +41,14 @@ class JsonlAnalyser {
   private data: JsonData[] = [];
   private currentRow: number = 0;
   private updateInterval: number | null = null;
-  private chartData: { scatter: ChartData, line: ChartData } = { scatter: {}, line: {} };
+  private chartData: { scatter: ChartData; line: ChartData } = { scatter: {}, line: {} };
   private chartDataKeys = {
-    scatter: [
-      { xKey: 'state.agents[:].p[0]', yKey: 'state.agents[:].p[1]' }
-    ],
+    scatter: [{ xKey: 'state.agents[:].p[0]', yKey: 'state.agents[:].p[1]' }],
     line: [
       { xKey: 't', yKey: 'state.debug.p1[0]' },
       { xKey: 't', yKey: 'state.debug.p1[1]' },
       { xKey: 't', yKey: 'state.debug.p1[2]' },
-    ]
+    ],
   };
   private chartType: string = 'line';
 
@@ -94,7 +92,7 @@ class JsonlAnalyser {
       container: jsonViewerEl,
       onRowChange: (row: number) => {
         this.currentRow = row;
-      }
+      },
     });
 
     this.init();
@@ -111,7 +109,7 @@ class JsonlAnalyser {
     this.lastRowBtn.addEventListener('click', () => this.goToRow(this.data.length - 1));
     this.prevRowBtn.addEventListener('click', () => this.goToRow(this.currentRow - 1));
     this.nextRowBtn.addEventListener('click', () => this.goToRow(this.currentRow + 1));
-    this.rowInput.addEventListener('change', (e) => {
+    this.rowInput.addEventListener('change', e => {
       const target = e.target as HTMLInputElement;
       this.goToRow(parseInt(target.value) || 0);
     });
@@ -144,7 +142,7 @@ class JsonlAnalyser {
       this.renderKeyTable();
     });
 
-    this.modal.addEventListener('click', (e) => {
+    this.modal.addEventListener('click', e => {
       if (e.target === this.modal) this.closeModal();
     });
   }
@@ -166,7 +164,7 @@ class JsonlAnalyser {
     });
 
     this.keysTbody.querySelectorAll('input').forEach(input => {
-      input.addEventListener('input', (e) => {
+      input.addEventListener('input', e => {
         const target = e.target as HTMLInputElement;
         const index = parseInt(target.dataset.index!);
         const field = target.dataset.field as 'xKey' | 'yKey';
@@ -175,7 +173,7 @@ class JsonlAnalyser {
     });
 
     this.keysTbody.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', e => {
         const target = e.target as HTMLButtonElement;
         const index = parseInt(target.dataset.index!);
         if (this.pendingKeys.length > 1) {
@@ -194,7 +192,6 @@ class JsonlAnalyser {
     } else {
       this.chartDataKeys.line = this.pendingKeys;
     }
-
 
     this.closeModal();
     this.updateChartData();
@@ -215,10 +212,10 @@ class JsonlAnalyser {
         types: [
           {
             description: 'JSON Lines',
-            accept: { 'application/json': ['.jsonl', '.jsonlines', '.json'] }
-          }
+            accept: { 'application/json': ['.jsonl', '.jsonlines', '.json'] },
+          },
         ],
-        multiple: false
+        multiple: false,
       });
 
       if (handles.length > 0) {
@@ -241,17 +238,18 @@ class JsonlAnalyser {
       const text = await file.text();
       this.data = text
         .trim()
-        .split("\n")
-        .filter((line) => line.trim())
+        .split('\n')
+        .filter(line => line.trim())
         .map((line, index) => {
           try {
             return JSON.parse(line);
           } catch (e) {
             console.error(`Error parsing line ${index + 1}: ${e}`);
-            console.log(line)
+            console.log(line);
           }
           return undefined;
-        }).filter(a=>a);
+        })
+        .filter(a => a);
 
       if (this.data.length > 0) {
         if (this.currentRow >= this.data.length) {
@@ -295,25 +293,25 @@ class JsonlAnalyser {
   }
 
   private updateChartData(): void {
-    for (const plotType of ["scatter", "line"]) {
+    for (const plotType of ['scatter', 'line']) {
       let chartData: ChartData = {};
-      const keys = this.chartDataKeys[plotType as "scatter" | "line"];
+      const keys = this.chartDataKeys[plotType as 'scatter' | 'line'];
 
       for (const rowIdx of this.data.keys()) {
-        const row=this.data[rowIdx];
+        const row = this.data[rowIdx];
         for (const key of keys) {
           const xVals = getNestedValueWithColons(row, key.xKey);
           const yVals = getNestedValueWithColons(row, key.yKey);
 
           const xValsEntries = Object.entries(xVals);
           const yValsEntries = Object.entries(yVals);
-          
-          for (let i=0; i<yValsEntries.length; i++){
-            const [yKey,yVal] = yValsEntries[i];
-            const [xKey,xVal] = xValsEntries[i];
-            const traceKey = xKey +"|"+ yKey;
-            if (!(traceKey in chartData)||rowIdx===0) {
-              chartData[traceKey] = { x: [], y: [], text: []  };
+
+          for (let i = 0; i < yValsEntries.length; i++) {
+            const [yKey, yVal] = yValsEntries[i];
+            const [xKey, xVal] = xValsEntries[i];
+            const traceKey = xKey + '|' + yKey;
+            if (!(traceKey in chartData) || rowIdx === 0) {
+              chartData[traceKey] = { x: [], y: [], text: [] };
             }
             chartData[traceKey].x.push(typeof xVal === 'number' ? xVal : NaN);
             chartData[traceKey].y.push(typeof yVal === 'number' ? yVal : NaN);
@@ -321,7 +319,7 @@ class JsonlAnalyser {
           }
         }
       }
-      this.chartData[plotType as "scatter" | "line"] = chartData;
+      this.chartData[plotType as 'scatter' | 'line'] = chartData;
     }
   }
 
@@ -332,11 +330,13 @@ class JsonlAnalyser {
     }
 
     if (this.chartType === 'scatter') {
-      const yKey = 'y'; const xKey = 'x';
+      const yKey = 'y';
+      const xKey = 'x';
       const renderScatter = createScatterChart();
       renderScatter(this.chartDiv, this.chartData.scatter, xKey, yKey);
     } else {
-      const yKey = 'y'; const xKey = 't';
+      const yKey = 'y';
+      const xKey = 't';
       const lineChartRenderer = createLineChart(xKey);
       lineChartRenderer.render(this.chartDiv, this.chartData.line);
     }
